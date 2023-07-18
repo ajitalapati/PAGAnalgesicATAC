@@ -1,90 +1,10 @@
-if (!requireNamespace("devtools", quietly = TRUE)) install.packages("devtools")
-
-devtools::install_github("GreenleafLab/ArchR", ref="master", 
-                         repos = BiocManager::repositories())
-
-#notes from manual 
-#Archr arrow files are comparable to Seurat objects which store data in levels
-#as metadata withing the object
-
+setwd("/work/aalapa/pag")
 library(ArchR)
-set.seed(1)
+library(parallel)
+addArchRThreads(threads = 18) 
 
-addArchRThreads(threads = 2)
+projPAG <- loadArchRProject(path = "./PAG_ATAC_Directory", force = FALSE, showLogo = TRUE)
 
-#ArchR has a precompiled mm10 genome with blacklist regions and annotations so no need to compile one
-#just kidding this is rat data so we will need to compilea custom rn6 or rn7 ArchR genome object guided by the tutorial
-
-#first identify and install and load the relevant BSgenome object.
-if (!requireNamespace("BSgenome.Rnorvegicus.UCSC.rn7", quietly = TRUE)){
-  BiocManager::install("BSgenome.Rnorvegicus.UCSC.rn7")
-}
-library(BSgenome.Rnorvegicus.UCSC.rn7)
-
-# create genome annotation
-genomeAnnotation.rn7 <- createGenomeAnnotation(genome = BSgenome.Rnorvegicus.UCSC.rn7)
-
-# install transcript and organism databased for annotaiton
-
-if (!requireNamespace("TxDb.Rnorvegicus.UCSC.rn7.refGene", quietly = TRUE)){
-  BiocManager::install("TxDb.Rnorvegicus.UCSC.rn7.refGene")
-}
-if (!requireNamespace("org.Rn.eg.db", quietly = TRUE)){
-  BiocManager::install("org.Rn.eg.db")
-}
-library(TxDb.Rnorvegicus.UCSC.rn7.refGene)
-library(org.Rn.eg.db)
-
-geneAnnotation.rn7 <- createGeneAnnotation(TxDb = TxDb.Rnorvegicus.UCSC.rn7.refGene, OrgDb = org.Rn.eg.db)
-
-geneAnnotation.rn7<-createGeneAnnotation(TSS = geneAnnotation.rn7$TSS, exons = geneAnnotation.rn7$exons, 
-                                     genes = geneAnnotation.rn7$genes)
-
-# load the fragment files before data aggregation with Cellranger
-
-inputFiles <- c("CFA_Veh_atac_fragments.tsv.gz", 
-                "CFA_ApAP_atac_fragments.tsv.gz",
-                "CFA_3DDA_atac_fragments.tsv.gz",
-                "Saline_Veh_atac_fragments.tsv.gz")
-
-sampleNames <- c("CFA_Veh", "CFA_ApAP", "CFA_3DDA", "Saline_Veh") 
-
-inputFiles
-
-ArrowFiles <- createArrowFiles(
-  inputFiles = inputFiles,
-  sampleNames = sampleNames,
-  geneAnnotation = geneAnnotation.rn7,
-  genomeAnnotation = genomeAnnotation.rn7,
-  minTSS = 1, #Dont set this too high because you can always increase later
-  minFrags = 1000, 
-  addTileMat = TRUE,
-  addGeneScoreMat = TRUE
-)
-
-#view arrow file/files to check that it loaded a string of charachters
-ArrowFiles
-
-# Doublet inference using ArchR on Arrow Files
-doubScores <- addDoubletScores(
-  input = ArrowFiles,
-  k = 10, #Refers to how many cells near a "pseudo-doublet" to count.
-  knnMethod = "UMAP", #Refers to the embedding to use for nearest neighbor search with doublet projection.
-  LSIMethod = 1
-)
-
-# Create ArchR project using the loaded ArrowFiles
-projPAG <- ArchRProject(
-  ArrowFiles = ArrowFiles, 
-  geneAnnotation = geneAnnotation.rn7,
-  genomeAnnotation = genomeAnnotation.rn7,
-  outputDirectory ="PAG_ATAC_Directory",
-  copyArrows = TRUE #This is recommended so that if you modify the Arrow files you have an original copy for later usage.
-)
-
-saveArchRProject(ArchRProj = projPAG, outputDirectory = "PAG_ATAC_Directory", load = FALSE)
-
-# We save this as a new ArchRProject for the purposes of this stepwise tutorial but you can overwrite the ArchRProject instead
 projPAG2 <- filterDoublets(projPAG)
 
 projPAG2
@@ -214,6 +134,22 @@ heatmapGS <- markerHeatmap(
 
 ComplexHeatmap::draw(heatmapGS, heatmap_legend_side = "bot", annotation_legend_side = "bot")
 
+saveArchRProject(ArchRProj = projPAG2, outputDirectory = "PAG_ATAC_Directory2", load = FALSE)
 
+p <- plotBrowserTrack(
+  ArchRProj = projPAG2, 
+  groupBy = "Clusters", 
+  geneSymbol = markerGenes, 
+  upstream = 50000,
+  downstream = 50000
+)
+
+grid::grid.newpage()
+grid::grid.draw(p$CD14)
+
+plotPDF(plotList = p, 
+        name = "Plot-Tracks-Marker-Genes.pdf", 
+        ArchRProj = projPAG2, 
+        addDOC = FALSE, width = 5, height = 5)
 
 
