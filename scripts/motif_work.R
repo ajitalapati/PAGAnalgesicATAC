@@ -56,7 +56,8 @@ pma <- plotMarkers(seMarker = markerTest, name = "C1", cutOff = "FDR <= 0.1 & ab
 pma
 
 # STILL NEEDS COMPLETION
-projPAG4 <- addMotifAnnotations(ArchRProj = projPAG4, motifSet = "cisbp", name = "Motif")
+projPAG4 <- addMotifAnnotations(ArchRProj = projPAG4, motifSet = "JASPAR2020", name = "Motif",
+       species = getGenome(ArchRProj = projPAG4))
 
 projPAG4 <- addCoAccessibility(
   ArchRProj = projPAG4,
