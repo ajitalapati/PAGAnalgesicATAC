@@ -213,7 +213,3 @@ heatmapGS <- markerHeatmap(
 )
 
 ComplexHeatmap::draw(heatmapGS, heatmap_legend_side = "bot", annotation_legend_side = "bot")
-
-
-
-
