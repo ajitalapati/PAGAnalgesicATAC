@@ -55,7 +55,7 @@ markerTest <- getMarkerFeatures(
 pma <- plotMarkers(seMarker = markerTest, name = "C1", cutOff = "FDR <= 0.1 & abs(Log2FC) >= 1", plotAs = "Volcano")
 pma
 
-# STILL NEEDS COMPLETION
+# CHAPTER 12-14
 projPAG4 <- addMotifAnnotations(ArchRProj = projPAG4, motifSet = "JASPAR2020", name = "Motif",
        species = getGenome(ArchRProj = projPAG4))
 
@@ -70,5 +70,34 @@ cA <- getCoAccessibility(
   resolution = 1,
   returnLoops = FALSE
 )
+#==================================================
 
 
+# run after integration with RNA Data
+projPAG4 <- addPeak2GeneLinks(
+  ArchRProj = projPAG4,
+  reducedDims = "IterativeLSI"
+)
+
+p2g <- getPeak2GeneLinks(
+  ArchRProj = projPAG4,
+  corCutOff = 0.45,
+  resolution = 1,
+  returnLoops = FALSE
+)
+
+p1 <- plotEmbedding(ArchRProj = projPAG4, colorBy = "cellColData", name = "Clusters", embedding = "UMAP")
+p1
+
+head(projPAG4$cellNames)
+
+trajectory <- c("Progenitor", "GMP", "Mono")
+
+projPAG4 <- addTrajectory(
+  ArchRProj = projPAG4,
+  name = "MyeloidU",
+  groupBy = "Clusters",
+  trajectory = trajectory,
+  embedding = "UMAP",
+  force = TRUE
+)
