@@ -52,7 +52,7 @@ PAG <- FindClusters(PAG, resolution = 0.5)
 
 PAG <- RunUMAP(PAG, dims = 1:15)
 
-
+saveRDS(PAG, "PAG.rds")
 
 # load libraries and functions
 lapply(c("dplyr","Seurat","HGNChelper","openxlsx"), library, character.only = T)

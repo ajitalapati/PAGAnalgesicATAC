@@ -13,6 +13,7 @@ projPAG3 <- addGroupCoverages(ArchRProj = projPAG3,
                   groupBy = "Clusters")
 
 pathToMacs2 <- "/home/aalapa/.local/share/r-miniconda/envs/PeakCalling_analysis/bin/macs2"
+pathToMacs2 <- "/work/aalapa/"
 
 projPAG3 <- addReproduciblePeakSet(
   ArchRProj = projPAG3, 
