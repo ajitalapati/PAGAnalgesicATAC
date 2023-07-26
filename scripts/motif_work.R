@@ -1,7 +1,7 @@
-setwd("/work/aalapa/pag")
+setwd("~/Documents/PAGAnalgesicATAC")
 library(ArchR)
 library(parallel)
-addArchRThreads(threads = 18) 
+addArchRThreads(threads = 22) 
 
 library(BSgenome.Rnorvegicus.UCSC.rn7)
 library(TxDb.Rnorvegicus.UCSC.rn7.refGene)
@@ -9,7 +9,7 @@ library(org.Rn.eg.db)
 
 library(Cairo)
 
-projPAG4 <- loadArchRProject(path = "./PAG_ATAC_Directory3", force = FALSE, showLogo = TRUE)
+projPAG4 <- loadArchRProject(path = "./PAG_ATAC_Directory3", force = FALSE, showLogo = FALSE)
 
 markersPeaks <- getMarkerFeatures(
   ArchRProj = projPAG4, 
@@ -45,59 +45,117 @@ markerList
 markerTest <- getMarkerFeatures(
   ArchRProj = projPAG4, 
   useMatrix = "PeakMatrix",
-  groupBy = "Clusters",
+  groupBy = "Sample",
   testMethod = "wilcoxon",
   bias = c("TSSEnrichment", "log10(nFrags)"),
-  useGroups = "C1",
-  bgdGroups = "C2"
+  useGroups = "CFA_3DDA",
+  bgdGroups = "CFA_ApAP"
 )
 
-pma <- plotMarkers(seMarker = markerTest, name = "C1", cutOff = "FDR <= 0.1 & abs(Log2FC) >= 1", plotAs = "Volcano")
+pma <- plotMarkers(seMarker = markerTest, name = "CFA_3DDA", plotAs = "Volcano")
 pma
 
+getCellColData(projPAG4)
+
 # CHAPTER 12-14
-projPAG4 <- addMotifAnnotations(ArchRProj = projPAG4, motifSet = "JASPAR2020", name = "Motif",
-       species = getGenome(ArchRProj = projPAG4))
+library(JASPAR2020)
 
-projPAG4 <- addCoAccessibility(
+projPAG4 <- addMotifAnnotations(ArchRProj = projPAG4, motifSet = "encode", name = "Motif")
+
+motifsUp <- peakAnnoEnrichment(
+  seMarker = markerTest,
   ArchRProj = projPAG4,
-  reducedDims = "IterativeLSI"
+  peakAnnotation = "Motif",
+  cutOff = "FDR <= 0.1 & Log2FC >= 0.5"
 )
 
-cA <- getCoAccessibility(
+df <- data.frame(TF = rownames(motifsUp), mlog10Padj = assay(motifsUp)[,1])
+df <- df[order(df$mlog10Padj, decreasing = TRUE),]
+df$rank <- seq_len(nrow(df))
+
+ggUp <- ggplot(df, aes(rank, mlog10Padj, color = mlog10Padj)) + 
+  geom_point(size = 1) +
+  ggrepel::geom_label_repel(
+    data = df[rev(seq_len(30)), ], aes(x = rank, y = mlog10Padj, label = TF), 
+    size = 1.5,
+    nudge_x = 2,
+    color = "black"
+  ) + theme_ArchR() + 
+  ylab("-log10(P-adj) Motif Enrichment") + 
+  xlab("Rank Sorted TFs Enriched") +
+  scale_color_gradientn(colors = paletteContinuous(set = "comet"))
+
+ggUp
+
+motifsDo <- peakAnnoEnrichment(
+  seMarker = markerTest,
   ArchRProj = projPAG4,
-  corCutOff = 0.5,
-  resolution = 1,
-  returnLoops = FALSE
+  peakAnnotation = "Motif",
+  cutOff = "FDR <= 0.1 & Log2FC <= -0.5"
 )
-#==================================================
 
+df <- data.frame(TF = rownames(motifsDo), mlog10Padj = assay(motifsDo)[,1])
+df <- df[order(df$mlog10Padj, decreasing = TRUE),]
+df$rank <- seq_len(nrow(df))
 
-# run after integration with RNA Data
-projPAG4 <- addPeak2GeneLinks(
+ggDo <- ggplot(df, aes(rank, mlog10Padj, color = mlog10Padj)) + 
+  geom_point(size = 1) +
+  ggrepel::geom_label_repel(
+    data = df[rev(seq_len(30)), ], aes(x = rank, y = mlog10Padj, label = TF), 
+    size = 1.5,
+    nudge_x = 2,
+    color = "black"
+  ) + theme_ArchR() + 
+  ylab("-log10(FDR) Motif Enrichment") +
+  xlab("Rank Sorted TFs Enriched") +
+  scale_color_gradientn(colors = paletteContinuous(set = "comet"))
+
+ggDo
+
+#12.2
+enrichMotifs <- peakAnnoEnrichment(
+  seMarker = markersPeaks,
   ArchRProj = projPAG4,
-  reducedDims = "IterativeLSI"
+  peakAnnotation = "Motif",
+  cutOff = "FDR <= 0.1 & Log2FC >= 0.5"
 )
 
-p2g <- getPeak2GeneLinks(
-  ArchRProj = projPAG4,
-  corCutOff = 0.45,
-  resolution = 1,
-  returnLoops = FALSE
+heatmapEM <- plotEnrichHeatmap(enrichMotifs, n = 7, transpose = TRUE)
+
+ComplexHeatmap::draw(heatmapEM, heatmap_legend_side = "bot", annotation_legend_side = "bot")
+
+#13.1
+
+projPAG4 <- addBgdPeaks(projPAG4)
+projPAG4 <- addDeviationsMatrix(
+  ArchRProj = projPAG4, 
+  peakAnnotation = "Motif",
 )
 
-p1 <- plotEmbedding(ArchRProj = projPAG4, colorBy = "cellColData", name = "Clusters", embedding = "UMAP")
-p1
+plotVarDev <- getVarDeviations(projPAG4, name = "MotifMatrix", plot = TRUE)
 
-head(projPAG4$cellNames)
+#14.1
+motifPositions <- getPositions(projPAG4)
+motifs <- c("GATA1", "CEBPA", "EBF1", "IRF4", "TBX21", "PAX5")
+markerMotifs <- unlist(lapply(motifs, function(x) grep(x, names(motifPositions), value = TRUE)))
+markerMotifs <- markerMotifs[markerMotifs %ni% "SREBF1_22"]
+markerMotifs
 
-trajectory <- c("Progenitor", "GMP", "Mono")
+projPAG4 <- addGroupCoverages(ArchRProj = projPAG4, groupBy = "Clusters", force=TRUE)
 
-projPAG4 <- addTrajectory(
-  ArchRProj = projPAG4,
-  name = "MyeloidU",
-  groupBy = "Clusters",
-  trajectory = trajectory,
-  embedding = "UMAP",
-  force = TRUE
+seFoot <- getFootprints(
+  ArchRProj = projPAG4, 
+  positions = motifPositions[markerMotifs], 
+  groupBy = "Clusters"
 )
+
+#14.2
+plotFootprints(
+  seFoot = seFoot,
+  ArchRProj = projPAG4, 
+  normMethod = "Subtract",
+  plotName = "Footprints-Subtract-Bias-By-Cluster",
+  addDOC = FALSE,
+  smoothWindow = 5
+)
+
