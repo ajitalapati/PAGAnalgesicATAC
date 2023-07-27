@@ -43,16 +43,16 @@ markerList <- getMarkers(markersPeaks, cutOff = "FDR <= 0.01 & Log2FC >= 1")
 markerList
 
 markerTest <- getMarkerFeatures(
-  ArchRProj = projPAG4, 
+  ArchRProj = projPAG5, 
   useMatrix = "PeakMatrix",
   groupBy = "Sample",
   testMethod = "wilcoxon",
   bias = c("TSSEnrichment", "log10(nFrags)"),
-  useGroups = "CFA_3DDA",
-  bgdGroups = "CFA_ApAP"
+  useGroups = "Saline_Veh",
+  bgdGroups = "CFA_Veh"
 )
 
-pma <- plotMarkers(seMarker = markerTest, name = "CFA_3DDA", plotAs = "Volcano")
+pma <- plotMarkers(seMarker = markerTest, name = "Saline_Veh", plotAs = "Volcano")
 pma
 
 getCellColData(projPAG4)
@@ -141,12 +141,22 @@ markerMotifs <- unlist(lapply(motifs, function(x) grep(x, names(motifPositions),
 markerMotifs <- markerMotifs[markerMotifs %ni% "SREBF1_22"]
 markerMotifs
 
-projPAG4 <- addGroupCoverages(ArchRProj = projPAG4, groupBy = "Clusters", force=TRUE)
+temp <- c("Egr1","Egr2","Elk4","Ezh2","Hdac10","Irf3","Irf6","Mzf1","Nfatc1","Nfatc4","Nfkb2","Notch1","Notch4","Pou6f1","Rfx2","Rreb1","Tcf4","Zfp36l2","Creb3","Grip1")
+tfs <- lapply(temp, toupper)
+
+motifs <- c("TCF4", "GRIP1", "NOTCH1", "RREB1", "CAMTA1", "CREBL2", "CREM", "KCNIP3")
+
+
+markerMotifs <- unlist(lapply(tfs, function(x) grep(x, names(motifPositions), value = TRUE)))
+
+markerMotifs
+
+projPAG4 <- addGroupCoverages(ArchRProj = projPAG4, groupBy = "Sample", force=TRUE)
 
 seFoot <- getFootprints(
   ArchRProj = projPAG4, 
   positions = motifPositions[markerMotifs], 
-  groupBy = "Clusters"
+  groupBy = "Sample"
 )
 
 #14.2
@@ -154,8 +164,38 @@ plotFootprints(
   seFoot = seFoot,
   ArchRProj = projPAG4, 
   normMethod = "Subtract",
-  plotName = "Footprints-Subtract-Bias-By-Cluster",
+  plotName = "Footprints-Subtract-Bias-By-Sample-3",
   addDOC = FALSE,
   smoothWindow = 5
 )
+
+plotFootprints(
+  seFoot = seFoot,
+  ArchRProj = projPAG4, 
+  normMethod = "None",
+  plotName = "Footprints-By-Sample-3-No-Norm",
+  addDOC = FALSE,
+  smoothWindow = 5
+)
+
+#14.3
+projPAG4 <- addGroupCoverages(ArchRProj = projPAG4, groupBy = "Sample")
+
+seTSS <- getFootprints(
+  ArchRProj = projPAG4, 
+  positions = GRangesList(TSS = getTSS(projPAG4)), 
+  groupBy = "Sample",
+  flank = 2000
+)
+
+plotFootprints(
+  seFoot = seTSS,
+  ArchRProj = projPAG4, 
+  normMethod = "None",
+  plotName = "TSS-No-Normalization",
+  addDOC = FALSE,
+  flank = 2000,
+  flankNorm = 100
+)
+saveArchRProject(ArchRProj = projPAG4, outputDirectory = "PAG_ATAC_Directory4", load = FALSE)
 
