@@ -12,20 +12,34 @@ library(Cairo)
 projPAG5 <- loadArchRProject(path = "./PAG_ATAC_Directory4", force = FALSE, showLogo = FALSE)
 
 #section 11.1 in manual
+
 markerTest <- getMarkerFeatures(
   ArchRProj = projPAG5, 
   useMatrix = "GeneScoreMatrix",
   groupBy = "Sample",
   testMethod = "wilcoxon",
   bias = c("TSSEnrichment", "log10(nFrags)"),
-  bgdGroups = "CFA_ApAP",
-  useGroups = "CFA_3DDA",
-)
+  bgdGroups = c("Saline_Veh"),
+  useGroups = c("Saline_Veh", "CFA_Veh", "CFA_ApAP", "CFA_3DDA"))
 
+markerPeaks <- getMarkerFeatures(
+  ArchRProj = projPAG5, 
+  useMatrix = "PeakMatrix",
+  groupBy = "Sample",
+  testMethod = "wilcoxon",
+  bias = c("TSSEnrichment", "log10(nFrags)"),
+  bgdGroups = c("Saline_Veh"),
+  useGroups = c("Saline_Veh", "CFA_Veh", "CFA_ApAP", "CFA_3DDA"))
+
+
+head(t)
+t <- getGenes(projPAG5)
 t <- head(getGenes(projPAG5), -3)
 
+tdf <- data.frame(t)
+
 df <- data.frame(
-                symbol = t,
+                symbol = names,
                  Log2FC = assays(markerTest)$Log2FC, 
                  Pval = assays(markerTest)$Pval, 
                  FDR = assays(markerTest)$FDR)
@@ -33,3 +47,41 @@ df <- data.frame(
 colnames(df) <- c("chromosome", "start", "end", "width","strand","gene_id","symbol", "Log2FC", "Pval", "FDR")
 
 write.csv(df, "~/Documents/PAGAnalgesicATAC/brian/CFA_ApAP2CFA_3DDA.csv", row.names=FALSE)
+
+
+peaks <- getPeakSet(projPAG5)
+
+gsm <- getMatrixFromProject(ArchRProj = projPAG5, useMatrix = "GeneScoreMatrix")
+data <- as.data.frame(gsm$)
+
+GRanges(name = gsm)
+
+gsm1 <- elementMetadata(gsm)
+names <- as.data.frame(gsm1)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

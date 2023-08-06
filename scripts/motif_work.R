@@ -9,20 +9,23 @@ library(org.Rn.eg.db)
 
 library(Cairo)
 
-projPAG4 <- loadArchRProject(path = "./PAG_ATAC_Directory3", force = FALSE, showLogo = FALSE)
+projPAG5 <- loadArchRProject(path = "./PAG_ATAC_Directory4", force = FALSE, showLogo = FALSE)
 
 markersPeaks <- getMarkerFeatures(
-  ArchRProj = projPAG4, 
+  ArchRProj = projPAG5, 
   useMatrix = "PeakMatrix", 
-  groupBy = "Clusters",
+  groupBy = "Sample",
   bias = c("TSSEnrichment", "log10(nFrags)"),
-  testMethod = "wilcoxon"
-)
+  testMethod = "wilcoxon", 
+  bgdGroups = c("CFA_Veh"),
+  useGroups = c("Saline_Veh", "CFA_Veh", "CFA_ApAP", "CFA_3DDA"))
+
 
 heatmapPeaks <- plotMarkerHeatmap(
   seMarker = markersPeaks, 
   cutOff = "FDR <= 0.1 & Log2FC >= 0.5",
-  transpose = TRUE
+  transpose = TRUE,
+  returnMatrix = TRUE,
 )
 
 heatmapPeaks
@@ -48,8 +51,8 @@ markerTest <- getMarkerFeatures(
   groupBy = "Sample",
   testMethod = "wilcoxon",
   bias = c("TSSEnrichment", "log10(nFrags)"),
-  useGroups = "Saline_Veh",
-  bgdGroups = "CFA_Veh"
+  bgdGroups = "CFA_Veh",
+  useGroups = "CFA_3DDA"
 )
 
 pma <- plotMarkers(seMarker = markerTest, name = "Saline_Veh", plotAs = "Volcano")
@@ -60,11 +63,11 @@ getCellColData(projPAG4)
 # CHAPTER 12-14
 library(JASPAR2020)
 
-projPAG4 <- addMotifAnnotations(ArchRProj = projPAG4, motifSet = "encode", name = "Motif")
+projPAG5 <- addMotifAnnotations(ArchRProj = projPAG5, motifSet = "encode", name = "Motif")
 
 motifsUp <- peakAnnoEnrichment(
   seMarker = markerTest,
-  ArchRProj = projPAG4,
+  ArchRProj = projPAG5,
   peakAnnotation = "Motif",
   cutOff = "FDR <= 0.1 & Log2FC >= 0.5"
 )
@@ -89,7 +92,7 @@ ggUp
 
 motifsDo <- peakAnnoEnrichment(
   seMarker = markerTest,
-  ArchRProj = projPAG4,
+  ArchRProj = projPAG5,
   peakAnnotation = "Motif",
   cutOff = "FDR <= 0.1 & Log2FC <= -0.5"
 )
@@ -113,26 +116,90 @@ ggDo <- ggplot(df, aes(rank, mlog10Padj, color = mlog10Padj)) +
 ggDo
 
 #12.2
+
+markersPeaks <- getMarkerFeatures(
+  ArchRProj = projPAG5, 
+  useMatrix = "PeakMatrix", 
+  groupBy = "Sample",
+  bias = c("TSSEnrichment", "log10(nFrags)"),
+  testMethod = "wilcoxon", 
+  bgdGroups = c("CFA_Veh"),
+  useGroups = c("CFA_3DDA", "CFA_ApAP"))
+
 enrichMotifs <- peakAnnoEnrichment(
   seMarker = markersPeaks,
-  ArchRProj = projPAG4,
+  ArchRProj = projPAG5,
   peakAnnotation = "Motif",
   cutOff = "FDR <= 0.1 & Log2FC >= 0.5"
 )
+
+data.frame(assays(enrichMotifs)$Enrichment)
 
 heatmapEM <- plotEnrichHeatmap(enrichMotifs, n = 7, transpose = TRUE)
 
 ComplexHeatmap::draw(heatmapEM, heatmap_legend_side = "bot", annotation_legend_side = "bot")
 
+#12.3
+
+
 #13.1
 
-projPAG4 <- addBgdPeaks(projPAG4)
-projPAG4 <- addDeviationsMatrix(
-  ArchRProj = projPAG4, 
+projPAG5 <- addBgdPeaks(projPAG5)
+projPAG5 <- addDeviationsMatrix(
+  ArchRProj = projPAG5, 
   peakAnnotation = "Motif",
 )
 
-plotVarDev <- getVarDeviations(projPAG4, name = "MotifMatrix", plot = TRUE)
+plotVarDev <- getVarDeviations(projPAG5, name = "MotifMatrix", plot = TRUE)
+plotVarDev
+
+motifs <- c("ZEB1", "SOX9", "SPI1", "SPIB", "RFX2")
+
+ZEB1 <- c("ZEB1")
+
+
+markerMotifs <- getFeatures(projPAG5, select = paste(motifs, collapse="|"), useMatrix = "MotifMatrix")
+markerMotifs
+
+markerMotifs <- grep("z:", markerMotifs, value = TRUE)
+markerMotifs
+
+markerMotifs <- c("z:ZEB1_897", "z:SOX9_1382", "z:SPI1_1022", "z:SPIB_1370", "z:RFX2_1480", "z:RFX2_1488")
+
+markerMotifs <- c("z:EGR1_752", "z:RREB1_877", "z:CREB3_1611", "z:SOX11_1025", "z:ATF3_311")
+
+p <- plotGroups(ArchRProj = projPAG5, 
+                groupBy = "Sample", 
+                colorBy = "MotifMatrix", 
+                name = markerMotifs,
+                imputeWeights = getImputeWeights(projPAG5)
+)
+p
+
+p2 <- lapply(seq_along(p), function(x){
+  if(x != 1){
+    p[[x]] + guides(color = FALSE, fill = FALSE) + 
+      theme_ArchR(baseSize = 6) +
+      theme(plot.margin = unit(c(0.1, 0.1, 0.1, 0.1), "cm")) +
+      theme(
+        axis.text.y=element_blank(), 
+        axis.ticks.y=element_blank(),
+        axis.title.y=element_blank()
+      ) + ylab("")
+  }else{
+    p[[x]] + guides(color = FALSE, fill = FALSE) + 
+      theme_ArchR(baseSize = 6) +
+      theme(plot.margin = unit(c(0.1, 0.1, 0.1, 0.1), "cm")) +
+      theme(
+        axis.ticks.y=element_blank(),
+        axis.title.y=element_blank()
+      ) + ylab("")
+  }
+})
+do.call(cowplot::plot_grid, c(list(nrow = 1, rel_widths = c(2, rep(1, length(p2) - 1))),p2))
+
+
+
 
 #14.1
 motifPositions <- getPositions(projPAG4)
@@ -154,7 +221,7 @@ markerMotifs
 projPAG4 <- addGroupCoverages(ArchRProj = projPAG4, groupBy = "Sample", force=TRUE)
 
 seFoot <- getFootprints(
-  ArchRProj = projPAG4, 
+  ArchRProj = projPAG5, 
   positions = motifPositions[markerMotifs], 
   groupBy = "Sample"
 )

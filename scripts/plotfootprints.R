@@ -55,20 +55,41 @@ cytokines_list <- lapply(list(
   "Nfil3", "Il34", "Fam19a4", "Clcf1", "Ifitm10", "Csf1", "Ackr1"
 ), toupper)
 
+top_gene <- lapply(list(
+  "SPIB_1370", "SPI1_1022", "SPI1_34", "SPIC_1372", "SPI1_1369", "SPI1_955", "ETV4_618", "ETS_741", "SPIC_1371", "SPI1_620", 
+  "ETV6_1354", "ELF1_658", "ELF5_1332", "EGR1_156", "ELF3_976", "EP300_157"
+), toupper)
+
 
 markerMotifs <- unlist(lapply(ion_channels_list, function(x) grep(x, names(motifPositions), value = TRUE)))
 
-seFoot <- getFootprints(
-  ArchRProj = projPAG5, 
-  positions = motifPositions[markerMotifs], 
-  groupBy = "Sample"
-)
-
+for (gene in top_gene){
+  seFoot <- getFootprints(
+    ArchRProj = projPAG5, 
+    #positions = motifPositions[markerMotifs], 
+    positions = motifPositions[gene],
+    groupBy = "Sample"
+  )
+  
+  
+  
+  seFoot <- getFootprints(
+    ArchRProj = projPAG5,
+    positions = motifPositions["RFX2_1480"],
+    groupBy = "Sample"
+  )
+  
+  
 plotFootprints(
-  seFoot = seFoot,
-  ArchRProj = projPAG5, 
-  normMethod = "Subtract",
-  plotName = "ion-channels-Footprints-Subtract-Bias-By-Sample",
-  addDOC = FALSE,
-  smoothWindow = 5
-)
+    seFoot = seFoot,
+    ArchRProj = projPAG5, 
+    normMethod = "Subtract",
+    plotName = "Rfx2_2 Footprint",
+    addDOC = FALSE,
+    smoothWindow = 5
+  )
+}
+
+Egr1
+
+
