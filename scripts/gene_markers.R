@@ -118,7 +118,6 @@ markersGS <- getMarkerFeatures(
   maxCells = 1000
 )
 
-# Get markers for each of the clusters
 markerList <- getMarkers(markersGS, cutOff = "FDR <= 0.01 & Log2FC >= 2")
 markerList$C6$name
 

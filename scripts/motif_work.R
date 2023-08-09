@@ -9,7 +9,7 @@ library(org.Rn.eg.db)
 
 library(Cairo)
 
-projPAG5 <- loadArchRProject(path = "./PAG_ATAC_Directory4", force = FALSE, showLogo = FALSE)
+projPAG <- loadArchRProject(path = "./PAG_ATAC_Directory4", force = FALSE, showLogo = FALSE)
 
 markersPeaks <- getMarkerFeatures(
   ArchRProj = projPAG5, 
@@ -46,28 +46,40 @@ markerList <- getMarkers(markersPeaks, cutOff = "FDR <= 0.01 & Log2FC >= 1")
 markerList
 
 markerTest <- getMarkerFeatures(
-  ArchRProj = projPAG5, 
+  ArchRProj = projPAG, 
   useMatrix = "PeakMatrix",
   groupBy = "Sample",
   testMethod = "wilcoxon",
   bias = c("TSSEnrichment", "log10(nFrags)"),
-  bgdGroups = "CFA_Veh",
-  useGroups = "CFA_3DDA"
+  bgdGroups = "Saline_Veh",
+  useGroups = "CFA_Veh"
 )
 
-pma <- plotMarkers(seMarker = markerTest, name = "Saline_Veh", plotAs = "Volcano")
+pma <- plotMarkers(seMarker = markerTest, name = "CFA_Veh", plotAs = "Volcano", cutOff = "FDR <= 0.1 & Log2FC >= 0.5")
 pma
 
 getCellColData(projPAG4)
 
 # CHAPTER 12-14
 library(JASPAR2020)
+library(TFBSTools)
 
-projPAG5 <- addMotifAnnotations(ArchRProj = projPAG5, motifSet = "encode", name = "Motif")
+PWM <- getMatrixSet(
+  x = JASPAR2020,
+  opt = list(
+    collection = "CORE",
+    tax_group = "vertebrates",
+    species = "9606",
+    all_versions = FALSE,
+    matrixtype = "PWM"
+  )
+)
+
+projPAG <- addMotifAnnotations(ArchRProj = projPAG, motifSet = "homer", name = "Motif", force=TRUE)
 
 motifsUp <- peakAnnoEnrichment(
   seMarker = markerTest,
-  ArchRProj = projPAG5,
+  ArchRProj = projPAG,
   peakAnnotation = "Motif",
   cutOff = "FDR <= 0.1 & Log2FC >= 0.5"
 )
@@ -92,7 +104,7 @@ ggUp
 
 motifsDo <- peakAnnoEnrichment(
   seMarker = markerTest,
-  ArchRProj = projPAG5,
+  ArchRProj = projPAG,
   peakAnnotation = "Motif",
   cutOff = "FDR <= 0.1 & Log2FC <= -0.5"
 )
@@ -144,13 +156,13 @@ ComplexHeatmap::draw(heatmapEM, heatmap_legend_side = "bot", annotation_legend_s
 
 #13.1
 
-projPAG5 <- addBgdPeaks(projPAG5)
-projPAG5 <- addDeviationsMatrix(
-  ArchRProj = projPAG5, 
+projPAG <- addBgdPeaks(projPAG)
+projPAG <- addDeviationsMatrix(
+  ArchRProj = projPAG, 
   peakAnnotation = "Motif",
 )
 
-plotVarDev <- getVarDeviations(projPAG5, name = "MotifMatrix", plot = TRUE)
+plotVarDev <- getVarDeviations(projPAG, name = "MotifMatrix", plot = TRUE)
 plotVarDev
 
 motifs <- c("ZEB1", "SOX9", "SPI1", "SPIB", "RFX2")

@@ -7,6 +7,8 @@ set.seed(1)
 
 projPAG2 <- readRDS("Save-ArchR-Project.rds")
 
+projPAG2 <- loadArchRProject(path = "./PAG_ATAC_Directory4", force = FALSE, showLogo = FALSE)
+
 # ArchR 10.4 ading a peak matrix after calling peaks
 projPAG2 <- addPeakMatrix(projPAG2)
 

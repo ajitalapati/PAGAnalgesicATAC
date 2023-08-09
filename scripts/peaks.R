@@ -9,23 +9,24 @@ library(org.Rn.eg.db)
 
 projPAG3 <- loadArchRProject(path = "./PAG_ATAC_Directory2", force = FALSE, showLogo = TRUE)
  
-projPAG3 <- addGroupCoverages(ArchRProj = projPAG3,
-                  groupBy = "Clusters")
+projPAG <- addGroupCoverages(ArchRProj = projPAG,
+                  groupBy = "Clusters", force = TRUE)
 
 pathToMacs2 <- "/home/aalapa/.local/share/r-miniconda/envs/PeakCalling_analysis/bin/macs2"
 pathToMacs2 <- "/work/aalapa/"
+pathToMacs2 <- findMacs2()
 
-projPAG3 <- addReproduciblePeakSet(
-  ArchRProj = projPAG3, 
+projPAG <- addReproduciblePeakSet(
+  ArchRProj = projPAG, 
   groupBy = "Clusters", 
   genomeSize = 2647915728,
   pathToMacs2 = pathToMacs2
 )
 
-getPeakSet(projPAG3)
-projPAG3 <- addPeakMatrix(projPAG3)
+getPeakSet(projPAG)
+projPAG <- addPeakMatrix(projPAG)
 
 getAvailableMatrices(projPAG3)
 table(projPAG3$Clusters)
 
-saveArchRProject(ArchRProj = projPAG3, outputDirectory = "PAG_ATAC_Directory3", load = FALSE)
+saveArchRProject(ArchRProj = projPAG, outputDirectory = "PAG_ATAC_Directory4", load = FALSE)

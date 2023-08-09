@@ -20,10 +20,10 @@ p <- plotFragmentSizes(
   logFile = createLogFile("plotFragmentSizes")
 )
 
-p3 <- plotEmbedding(ArchRProj = projPAG, colorBy = "cellColData", name = "Clusters", embedding = "UMAP")  + theme(plot.margin = margin(0, 0, 5, 5) )
+p3 <- plotEmbedding(ArchRProj = projPAG, colorBy = "cellColData", name = "Clusters", embedding = "UMAP")  + theme(plot.margin = margin(0, 0, 5, 5) , labelMeans =FALSE)
 p3
 
-counter_hashmap <- table(projPAG$Clusters)
+counter_hashmap <- table(projPAG2$Clusters)
 
 # Convert the counter hashmap to a data frame
 data_df <- data.frame(values = names(counter_hashmap), counts = as.vector(counter_hashmap))
@@ -32,7 +32,7 @@ data_df <- data.frame(values = names(counter_hashmap), counts = as.vector(counte
 data_df$values <- factor(data_df$values, levels = sort(unique(data_df$values)))
 
 # Plot the histogram using ggplot2
-count_hist <- ggplot(data_df, aes(x = counts, y = values)) +
+count_hist <- ggplot(data_df, aes(x = counts, y = values, fill = values)) +
   geom_bar(stat = "identity", fill = "lightblue", color = "black", position = "dodge") +
   labs(title = "Number of Cells",
        x = "Frequency", y = "") +
@@ -41,7 +41,7 @@ count_hist <- ggplot(data_df, aes(x = counts, y = values)) +
 widths <- c(3, 1.5)
 
 # Combine the plots side by side using cowplot
-final_plot <- plot_grid(p3, count_hist + geom_text(aes(label = "")), ncol = 2, rel_widths = widths)
+final_plot <- plot_grid(p1, count_hist + geom_text(aes(label = "")), ncol = 2, rel_widths = widths)
 
 # Print the final plot
 print(final_plot)
@@ -108,7 +108,7 @@ markerMotifs <- markerMotifs[markerMotifs %ni% "z:SREBF1_22"]
 markerMotifs
 
 p <- plotEmbedding(
-  ArchRProj = projHeme5, 
+  ArchRProj = projPAG, 
   colorBy = "MotifMatrix", 
   name = sort(markerMotifs), 
   embedding = "UMAP",
@@ -129,5 +129,51 @@ p2 <- lapply(p, function(x){
 do.call(cowplot::plot_grid, c(list(ncol = 3),p2))
 
 #2e end__________________________________________
+
+markersPeaks <- getMarkerFeatures(
+  ArchRProj = projPAG, 
+  useMatrix = "PeakMatrix", 
+  groupBy = "Sample",
+  bias = c("TSSEnrichment", "log10(nFrags)"),
+  testMethod = "wilcoxon"
+)
+
+markerTest <- getMarkerFeatures(
+  ArchRProj = projPAG, 
+  useMatrix = "PeakMatrix",
+  groupBy = "Sample",
+  testMethod = "wilcoxon",
+  bias = c("TSSEnrichment", "log10(nFrags)"),
+  useGroups = "CFA_3DDA",
+  bgdGroups = "CFA_ApAP"
+)
+
+pv <- plotMarkers(seMarker = markerTest, name = "CFA_3DDA", cutOff = "FDR <= 0.1 & abs(Log2FC) >= 1", plotAs = "Volcano")
+pv
+
+motifsUp <- peakAnnoEnrichment(
+  seMarker = markerTest,
+  ArchRProj = projPAG,
+  peakAnnotation = "Motif",
+  cutOff = "FDR <= 0.1 & Log2FC >= 0.5"
+)
+
+enrichMotifs <- peakAnnoEnrichment(
+  seMarker = markersPeaks,
+  ArchRProj = projPAG,
+  peakAnnotation = "Motif",
+  cutOff = "FDR <= 0.1 & Log2FC >= 0.5"
+)
+
+addPeakSet(
+  ArchRProj = projPAG,
+  peakSet = NULL,
+  genomeAnnotation = getGenomeAnnotation(projPAG),
+  force = FALSE
+)
+
+
+
+
 
 
