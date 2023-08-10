@@ -91,7 +91,7 @@ marker_dfC16 <- as.data.frame(markerList$C16)
 
 # ArchR8.3
 
-projPAG2$Clusters <- mapLabels(projPAG2$Clusters,
+projPAG$Clusters <- mapLabels(projPAG$Clusters,
                                newLabels = c("Microglia", "Oligodendrocytes","Oligodendrocytes",
                               "Oligodendrocytes","Oligodendrocytes", "Astrocytes", 
                               "OPCs","Ependymal Cells","Glut Neurons","GABAergic Neurons",
@@ -106,7 +106,7 @@ pal <- c("GABAergic Neurons" = "#C06CAB","Glut Neurons" = "#E6C2DC","Oligodendro
 
 ArchRPalettes$paired
 
-p1 <- plotEmbedding(projPAG2, colorBy = "cellColData", name = "Clusters", embedding = "UMAP", baseSize = 12, discreteSet = "ironMan")
+p1 <- plotEmbedding(projPAG, colorBy = "cellColData", name = "Clusters", embedding = "UMAP", baseSize = 12, discreteSet = "ironMan")
 p1
 
 plotPDF(p1, name = "Plot-UMAP-Remap-Clusters.pdf", ArchRProj = projPAG2, addDOC = FALSE, width = 6, height = 6)

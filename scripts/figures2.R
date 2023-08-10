@@ -85,10 +85,57 @@ for (gene in ionGeneSymbols){
     rastr = TRUE
   )
   plotPDF(currUMAP, name = gene, addDOC = FALSE, width = 6, height = 6)
-  }
+}
+
+projPAG <- addArchRAnnotations(ArchRProj = projPAG, collection = "ATAC")
+
+projPAG <- addDeviationsMatrix(
+  ArchRProj = projPAG, 
+  peakAnnotation = "ATAC",
+  force = TRUE
+)
 
 
+motifs <- c("Sox2.HMG_261", "Sox15.HMG_260", "Sox10.HMG_259", "Sox6.HMG_264", "Sox9.HMG_265", "Sox4.HMG_263", "Sox3.HMG_262", 
+               "SpiB.ETS_268", "Rfx2.HTH_242", "Rfx1.HTH_241", "RORgt.NR_246", "ELF5.ETS_67", "ETS1.ETS_76")
+markerMotifs <- getFeatures(projPAG, select = paste(motifs, collapse="|"), useMatrix = "MotifMatrix")
+markerMotifs
 
+deviationUMAP <- plotEmbedding(
+  ArchRProj = projPAG, 
+  colorBy = "MotifMatrix", 
+  name = sort(markerMotifs), 
+  embedding = "UMAP",
+  imputeWeights = getImputeWeights(projPAG)
+)
+deviationUMAP
 
+for (motif in motifs){
+  setwd("~/Documents/PAGAnalgesicATAC/DevUMAP")
+  currUmap = paste("deviations:", motif, sep='')
+  plotPDF(deviationUMAP[currUmap], name = motif, addDOC = FALSE, width = 6, height = 6)
+}
 
+deviationUMAP$"deviations:ELF5.ETS_67"
+currUmap = paste("deviations:", "ELF5.ETS_67", sep='')
+deviationUMAP[currUmap]
 
+motifPositions <- getPositions(projPAG)
+markerMotifs <- unlist(lapply(motifs, function(x) grep(x, names(motifPositions), value = TRUE)))
+markerMotifs
+
+seFoot <- getFootprints(
+  ArchRProj = projPAG, 
+  positions = motifPositions[markerMotifs], 
+  groupBy = "Sample"
+)
+
+plotFootprints(
+  seFoot = seFoot,
+  pal = magma_pal,
+  ArchRProj = projPAG, 
+  normMethod = "Subtract",
+  plotName = "Footprints-Subtract-Bias",
+  addDOC = FALSE,
+  smoothWindow = 5
+)
