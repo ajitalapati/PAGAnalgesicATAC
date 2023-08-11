@@ -23,14 +23,16 @@ markerTest <- getMarkerFeatures(
   useGroups = c("Saline_Veh", "CFA_Veh", "CFA_ApAP", "CFA_3DDA"))
 
 markerPeaks <- getMarkerFeatures(
-  ArchRProj = projPAG5, 
+  ArchRProj = projPAG, 
   useMatrix = "PeakMatrix",
   groupBy = "Sample",
   testMethod = "wilcoxon",
   bias = c("TSSEnrichment", "log10(nFrags)"),
-  bgdGroups = c("Saline_Veh"),
-  useGroups = c("Saline_Veh", "CFA_Veh", "CFA_ApAP", "CFA_3DDA"))
+  #bgdGroups = "Saline_Veh",
+  #useGroups = "CFA_Veh"
+  )
 
+assays(markerPeaks)
 
 head(t)
 t <- getGenes(projPAG5)
@@ -51,8 +53,8 @@ write.csv(df, "~/Documents/PAGAnalgesicATAC/brian/CFA_ApAP2CFA_3DDA.csv", row.na
 
 peaks <- getPeakSet(projPAG5)
 
-gsm <- getMatrixFromProject(ArchRProj = projPAG5, useMatrix = "GeneScoreMatrix")
-data <- as.data.frame(gsm$)
+gsm <- getMatrixFromProject(ArchRProj = projPAG, useMatrix = "PeakMatrix")
+data <- as.data.frame(gsm)
 
 GRanges(name = gsm)
 
